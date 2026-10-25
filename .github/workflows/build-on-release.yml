@@ -36,4 +36,4 @@ jobs:
       - name: Upload mod JAR to release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/myservercommands-*.jar
+          files: build/libs/minecraftcentralcommands-*.jar

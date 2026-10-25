@@ -1,171 +1,96 @@
-# MyServer Commands (Template)
+# MinecraftCentral Commands
 
-A Fabric client-only mod template for Minecraft that improves in-chat command completion by adding local client-side suggestions for server-specific commands and subcommands. The completion engine is published separately as the `CommandKit` Fabric library mod, so other client mods can register their own definitions.
+[![CurseForge](https://img.shields.io/curseforge/dt/1679294?logo=curseforge&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/minecraftcentral-commands)
 
----
+MinecraftCentral Commands is a Fabric client-only mod for Minecraft 26.2+ that improves in-chat command completion on MinecraftCentral by adding local client-side suggestions for MinecraftCentral-specific commands and subcommands. The completion engine is published separately as the `CommandKit` Fabric library mod, so other client mods can register their own definitions.
 
-## 📋 Template Guide
+The mod does not modify the server, does not require any server-side plugin or custom protocol, and does not execute commands automatically. It only enhances the client-side command suggestion pipeline so that the player gets better tab-completion while still sending normal Minecraft commands to MinecraftCentral.
 
-This section provides a step-by-step guide on how to configure and extend this mod for your own server.
+## Features
 
-### Server URL Configuration
+- Client-only implementation for Fabric 26.2+
+- MinecraftCentral-only suggestion layer
+- Supports command families such as `/friend`, `/guild`, `/party`, `/msg`, `/lang`, `/tpa`, and other command trees defined locally
+- Supports nested subcommands and argument-aware completion
+- Supports dynamic player suggestions for arguments like `<player>`
+- Supports combined literal-or-player values such as `everyone` or other command-specific special values
+- Supports repeatable player arguments such as `/party invite <player> <player> ...`
+- Keeps native Minecraft and vanilla command completion working when no MinecraftCentral command matches
+- Avoids any custom protocol or command execution logic
 
-The mod needs to know which server to apply command completion to. By default, it checks if the connected server's IP contains `your-server.net` (a placeholder to replace with your domain).
+## How it works
 
-**Where to configure:** `src/main/java/com/mythup/myservercommands/MyServerCommandsMod.java`
+The mod hooks into Minecraft's client-side command suggestion flow through a Fabric mixin on `CommandSuggestions`.
 
-**How to modify:** Open `MyServerCommandsMod.java` and find the `isTargetServer()` method:
+When the player types a command in the chat box, the client updates its suggestion state. The mod intercepts that lifecycle and checks whether:
 
-```java
-public static boolean isTargetServer() {
-    Minecraft client = Minecraft.getInstance();
-    if (client.level == null || client.player == null) {
-        return false;
-    }
-    var server = client.getCurrentServer();
-    if (server == null || server.ip == null) {
-        return false;
-    }
-    return server.ip.toLowerCase().contains("your-server.net");
-}
-```
+- the player is on MinecraftCentral,
+- the typed command matches a known local MinecraftCentral command tree,
+- the current word is part of a valid command path or argument slot.
 
-**To configure for your server:**
-1. Replace `"your-server.net"` with your server's domain (e.g., `"hypixel.net"`)
-2. For multiple servers, add additional `||` conditions:
-   ```java
-   return server.ip.toLowerCase().contains("your-server.net") || 
-          server.ip.toLowerCase().contains("another-server.net");
-   ```
-3. Rebuild the mod
+If the input matches a known MinecraftCentral command or parameter pattern, the mod injects additional `Suggestions` objects into the same Brigadier-based completion pipeline used by Minecraft itself.
 
-### Multi-World / Network Support
+The final command is still sent exactly as a normal Minecraft command by the game. The mod never bypasses the normal chat/command flow.
 
-If your mod needs to work across multiple server networks, you can configure checks for several domains:
+## Client-only architecture
 
-```java
-var ip = server.ip.toLowerCase();
-return ip.contains("your-server.net") || 
-       ip.contains("another-network.net") || 
-       ip.contains("third-network.org");
-```
+The mod intentionally stays entirely on the client side:
 
-You can also make the check case-insensitive by ensuring `.toLowerCase()` is used on both sides.
+- no MinecraftCentral server patching,
+- no plugin installation on the server,
+- no custom network protocol,
+- no manual command execution from the client.
 
----
+This means the mod is safe to use on vanilla MinecraftCentral as a local quality-of-life enhancement without any server-side cooperation.
 
-### Defining Commands
+## Command model
 
-Commands are defined in `src/main/java/com/mythup/myservercommands/brigadier/CommandDispatcher.java` using the CommandKit library's fluent API.
+The command system is defined in code as a lightweight local command tree that mirrors common MinecraftCentral command shapes. Each node can declare:
 
-**Command structure pattern:**
+- command names and aliases,
+- child subcommands,
+- argument definitions,
+- repeatable players,
+- player-or-literal alternatives,
+- literal values such as `best`, `everyone`, or language names.
 
-```java
-// Basic command with subcommands
-command("friend")
-    .then(command("add", player("player")))
-    .then(command("list", choices("page", "best")))
-    .then(command("remove", player("player")));
-```
+This model is intentionally simpler than a full Brigadier command tree, because the goal is not to replace the server command system but to improve the client-side completion experience.
 
-**Where to define:** `CommandDispatcher.java` in the `buildTree()` method
+## Examples
 
-**Registration:** All commands are automatically registered via the `register()` method which also applies the target-server check (`MyServerCommandsMod.isTargetServer()`).
+The project includes support for patterns like:
 
----
+- `/friend add <player>`
+- `/friend list best`
+- `/guild unmute <player|everyone>`
+- `/party invite <player> <player> ...`
+- `/msg <player> <message>`
+- `/tpa <player>`
+- `/tpa accept <player>`
+- `/lang` and `/language`
 
-### Available Parameter Types
+## Dynamic player suggestions
 
-The CommandKit library provides these argument types for command definitions:
+For player arguments like `<player>`, the mod reads the current online-player list from the client connection and filters it based on the current partial text.
 
-| Type | Method | Example |
-|------|--------|---------|
-| **Player** | `player("name")` | `command("msg", player("player"))` |
-| **String** | `string("name")` | `command("set", string("value"))` |
-| **Choices** | `choices("name", "val1", "val2")` | `command("page", choices("page", "best", "recent"))` |
-| **Repeatable Players** | `repeatablePlayer("name")` | `command("party", invite(repeatablePlayer("player")))` |
-| **Player or Literal** | `playerOrLiteral("name", "val1", "val2")` | `command("mute", playerOrLiteral("target", "everyone"))` |
-| **Rest Message** | `restMessage("name")` | `command("msg", player("player"), restMessage("message"))` |
+This is a practical client-side source because it does not require any external API and works naturally with vanilla Minecraft session data.
 
-**Usage examples:**
+## Unknown commands and compatibility
 
-#### Player argument
-```java
-command("tpa", player("player"))
-```
+The mod is deliberately careful not to override normal command completion for commands that are not part of the MinecraftCentral command list.
 
-#### Choices argument
-```java
-command("quality", choices("quality", "low", "medium", "high"))
-```
+If a typed command does not match the local MinecraftCentral command tree, the mod does not inject its own suggestions, and the game continues with normal behavior. This prevents broken completions such as stale `friend` suggestions appearing after unrelated commands like `/bedwars`.
 
-#### Repeatable players
-```java
-command("party", invite(repeatablePlayer("player")))
-```
+## Development status
 
-#### Player or literal values
-```java
-command("guild", mute(playerOrLiteral("target", "everyone")))
-```
+This project is focused on improving client-side command completion for MinecraftCentral commands, with emphasis on correctness, compatibility, and preserving the normal Minecraft chat/Tab flow.
 
-#### Combined usage
-```java
-command("settings", set(player("player"), choices("setting", "allinvite", "mute", "private")))
-```
+It is intentionally limited to client-only behavior and does not attempt to bypass MinecraftCentral restrictions or permissions.
 
----
+## License
 
-### Adding New Commands
+See the [LICENSE](./LICENSE) file for full license details. The project is licensed under a custom non-commercial license that allows free distribution and modification, but prohibits commercial use or selling of the software.
 
-1. **Open `CommandDispatcher.java`**
-2. **Add your command in the `buildTree()` method** using the fluent API
+## Author
 
-**Example: Adding a `/donate` command**
-
-```java
-// Add after existing commands
-CommandNode donate = command("donate")
-    .then(command("link", string("url")))
-    .then(command("status"));
-register(donate);
-```
-
-**Example: Adding a command with all argument types**
-
-```java
-CommandNode example = command("example")
-    .then(command("set", player("target"), choices("mode", "public", "private")))
-    .then(command("get", restMessage("notes")));
-register(example);
-```
-
-3. **Rebuild the mod** to apply changes
-
----
-
-### Development Setup
-
-**Prerequisites:**
-- Java 25 (or as specified in `build.gradle`)
-- Gradle 8.x
-- Fabric Loader 0.16.0+
-- Minecraft 26.2+
-
-**Building the mod:**
-```bash
-./gradlew build
-```
-
-**Running the mod:**
-```bash
-./gradlew runClient
-```
-
-**Testing command completion:**
-1. Start Minecraft with the mod installed
-2. Connect to your target server (or modify `isTargetServer()` in `MyServerCommandsMod.java` for your domain)
-3. Type `/` in chat to see available commands
-4. Type a command name (e.g., `/friend`) to see subcommands and arguments
-
----
+[MythUp_](https://github.com/MythUp_)

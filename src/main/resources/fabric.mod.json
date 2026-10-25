@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "myservercommands",
+  "id": "minecraftcentralcommands",
   "version": "${version}",
-  "name": "MyServer Commands",
+  "name": "MinecraftCentral Commands",
   "description": "Client-only command auto-completion enhancement.",
   "authors": [
     "MythUp"
@@ -10,12 +10,9 @@
   "contact": {},
   "license": "MIT",
   "environment": "client",
-  "mixins": [
-    "myservercommands.mixins.json"
-  ],
   "entrypoints": {
     "client": [
-      "com.mythup.myservercommands.MyServerCommandsMod"
+      "com.mythup.minecraftcentralcommands.MinecraftCentralCommandsMod"
     ]
   },
   "depends": {
@@ -23,6 +20,6 @@
     "minecraft": ">=26.2",
     "java": ">=25",
     "fabric-api": "*",
-    "commandkit": ">=1.0.0"
+    "commandkit": ">=1.2.1"
   }
 }

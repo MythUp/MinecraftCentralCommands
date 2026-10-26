@@ -5,40 +5,9 @@ import com.mythup.commandkit.CommandCompletion;
 import com.mythup.commandkit.CommandNode;
 import com.mythup.minecraftcentralcommands.MinecraftCentralCommandsMod;
 
-/**
- * Generic command dispatcher template using the CommandKit library.
- * 
- * This file defines the command tree structure for the mod.
- * To customize for your own commands:
- * 1. Modify the buildTree() method to add your own commands
- * 2. Add/remove subcommands using .then()
- * 3. Add arguments using .argument() with available types:
- * - player("name") - single player
- * - string("name") - free-form string
- * - choices("name", "val1", "val2") - restricted values
- * - repeatablePlayer("name") - multiple players
- * - playerOrLiteral("name", "val1", "val2") - player or literal
- * - restMessage("name") - captures remaining input
- * 4. All commands are registered via the register() method
- */
 public final class CommandDispatcher {
     private CommandDispatcher() {
     }
-
-    /**
-     * Build the command tree for the mod.
-     *
-     * Add your own commands here using the CommandKit fluent API.
-     * Each command can have subcommands (via .then()) and arguments (via
-     * .argument()).
-     *
-     * Example structure:
-     *
-     * CommandNode mycmd = command("mycmd")
-     * .then(command("sub1", player("player")))
-     * .then(command("sub2", choices("mode", "a", "b")));
-     * register(mycmd);
-     */
     public static void buildTree() {
         CommandNode claim = command("claim")
                 .then(command("abandon"))

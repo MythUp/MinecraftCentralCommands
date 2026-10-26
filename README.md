@@ -1,6 +1,6 @@
 # MinecraftCentral Commands
 
-[![CurseForge](https://img.shields.io/curseforge/dt/1679294?logo=curseforge&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/minecraftcentral-commands)
+[![CurseForge](https://img.shields.io/curseforge/dt/1759206?logo=curseforge&label=CurseForge)](https://www.curseforge.com/minecraft/mc-mods/minecraftcentral-commands)
 
 MinecraftCentral Commands is a Fabric client-only mod for Minecraft 26.2+ that improves in-chat command completion on MinecraftCentral by adding local client-side suggestions for MinecraftCentral-specific commands and subcommands. The completion engine is published separately as the `CommandKit` Fabric library mod, so other client mods can register their own definitions.
 

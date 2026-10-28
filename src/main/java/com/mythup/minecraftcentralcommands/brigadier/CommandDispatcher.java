@@ -177,7 +177,7 @@ public final class CommandDispatcher {
      * @param command the command node to register
      */
     private static void register(CommandNode command) {
-        command.when(context -> MinecraftCentralCommandsMod.isTargetServer());
+            command.when(context -> MinecraftCentralCommandsMod.isTargetServer()).serverIp("mccentral.org");
         CommandCompletion.register(command);
     }
 
